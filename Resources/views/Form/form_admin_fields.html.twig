@@ -1,0 +1,75 @@
+{% extends mosaic_themed_template('MosaicAdminBundle:Form:form_admin_fields.html.twig') %}
+
+{% block map_widget %}
+    <style type="text/css">
+        .{{ id }}_map{margin-bottom: 15px;}
+        #{{ id }}_map_search_clear{cursor: pointer;}
+        #{{ id }}_map_cur_location{cursor: pointer;}
+    </style>
+    {% spaceless %}
+            <div class="row">
+                <div class="col-md-12"> 
+                    <label>Search:</label>
+                    <div class="input-group"  style="margin-bottom: 10px;">
+                        <input type="text" id="{{ id }}_map_search" class=" form-control"/>
+                        <span class="input-group-addon"><span  class="glyphicon glyphicon-repeat" id="{{ id }}_map_search_clear"></span></span>  
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-map-marker" id="{{ id }}_map_cur_location"></span></span>  
+                  
+                    </div>
+                    
+                    <div id="{{ id }}_map" style="{{ css_style }}" class="{{ id }}_map"></div>  
+                   <script type="text/javascript">  
+                       $(document).ready(function(){
+                         var latValue = $('#{{sonata_admin.admin.uniqid}}_{{lat_field}}');
+                         var lngValue = $('#{{sonata_admin.admin.uniqid}}_{{lng_field}}');
+                         var lat = {{default_lat}};
+                         var lng = {{default_lng}};
+                         if(latValue.val() != ""){
+                             lat = latValue.val(); 
+                         }
+                         if(lngValue.val() != ""){
+                             lng = lngValue.val(); 
+                         } 
+                        $('#{{ id }}_map').locationpicker({
+                            location: {
+                                        latitude: lat, 
+                                        longitude: lng
+                                      },	
+                            radius: {{ radius }},
+                            inputBinding: {
+                                latitudeInput:     $('#{{sonata_admin.admin.uniqid}}_{{lat_field}}'),
+                                longitudeInput:    $('#{{sonata_admin.admin.uniqid}}_{{lng_field}}'),   
+                                locationNameInput: $('#{{ id }}_map_search')
+                            },
+                            enableAutocomplete: true
+                        }); 
+                        $("#{{ id }}_map_cur_location").click(function(){ 
+                              if (navigator.geolocation) { 
+                                    navigator.geolocation.getCurrentPosition(showCurrentLocation{{ id }});
+                              } else { 
+                                    alert("Geolocation is not supported by this browser."); 
+                              }
+                        });
+                        
+                        $("#{{ id }}_map_search_clear").click(function(){
+                            {{ id }}_map_search_clear();
+                        });
+                    }); 
+                    
+                    var {{ id }}_map_search_clear = function()
+                    {
+                        $("#{{ id }}_map_search").val("");
+                    }
+                    var showCurrentLocation{{ id }} = function(position){  
+                        var lat =  position.coords.latitude;
+                        var lng =  position.coords.longitude;   
+                          $('#{{ id }}_map').locationpicker('location', {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                          });
+                    }; 
+                    </script>
+                </div>
+           </div>
+    {% endspaceless %}
+{% endblock %}

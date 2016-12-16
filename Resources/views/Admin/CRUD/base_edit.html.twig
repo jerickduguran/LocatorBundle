@@ -1,0 +1,7 @@
+{% extends 'SonataAdminBundle:CRUD:base_edit.html.twig' %} 
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript" src='http://maps.google.com/maps/api/js?libraries=places&key=AIzaSyCroxeWAMu25pazpF6dnSdyB5VK3ChcPNk'></script>
+    <script src="{{ asset('bundles/mosaiclocator/js/locationpicker.jquery.min.js')}}"></script>  
+{% endblock javascripts %}

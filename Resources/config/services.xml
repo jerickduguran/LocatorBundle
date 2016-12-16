@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+ 
+    <services> 
+        
+        <service id="mosaic_locator.manager.locator" class="%mosaic_locator.manager.locator%">
+           <argument type="service" id="doctrine.orm.default_entity_manager" /> 
+           <argument>%mosaic_locator.entity.locator.class%</argument> 
+        </service> 
+        
+        <service id="mosaic_locator.form.type.map" class="%mosaic_locator.form.type.map%">
+            <tag name="form.type" alias="map" /> 
+            <argument type="service" id="service_container" />
+        </service>  
+    </services> 
+</container>

@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+  
+    <services>
+        <service id="mosaic_locator.admin.locator" class="%mosaic_locator.admin.locator.class%">
+            <tag name="sonata.admin" manager_type="orm" audit="false" group="locator" label="label.menu.locator"  show_in_dashboard="false" label_catalogue="%mosaic_locator.admin.locator.translation_domain%"  pager_type="simple" />
+            <argument/>
+            <argument>%mosaic_locator.entity.locator.class%</argument>
+            <argument>%mosaic_locator.admin.locator.controller%</argument>
+            <call method="setTranslationDomain">
+                <argument>%mosaic_locator.admin.locator.translation_domain%</argument>
+            </call>   	
+        </service>     
+    </services>    
+</container>

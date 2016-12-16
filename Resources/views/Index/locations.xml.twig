@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<locations>
+    {% if locations|length > 0 %}
+        {% for location in locations %}
+            <location>
+                    <name>{{ location.name }}</name>
+                    <address>{{ location.address }}</address>
+                    <phone>{{ location.phone }}</phone>
+                    <mobile>{{ location.mobile }}</mobile>
+                    <email>{{ location.email }}</email>
+                    <lat>{{ location.latitude }}</lat>
+                    <lng>{{ location.longitude }}</lng> 
+                    <photo>{% if location.photo %}{% path location.photo,'reference' %}{% else %}http://placehold.it/360x250{% endif %}</photo> 
+            </location> 
+        {% endfor %}
+     {% endif %}
+</locations>

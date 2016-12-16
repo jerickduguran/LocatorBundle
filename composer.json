@@ -1,0 +1,37 @@
+{
+    "name": "groupm-mosaic/locator-bundle",
+    "type": "symfony-bundle",
+    "description": "Mosaic Locator Bundle",
+    "keywords": ["symfony2", "GroupM", "Mosaic", "Mosaic Bundle", "Locator Bundle"],
+    "homepage": "https://bitbucket.org/groupmproducts/locator-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+          "name": "Jerick Duguran",
+          "email": "jerick.duguran@movent.com",
+          "homepage": "http://www.movent.com"
+        },
+        {
+          "name": "Andrew Aculana",
+          "email": "andrew.aculana@movent.com",
+          "homepage": "http://www.movent.com"
+        }
+    ],
+    "require": {
+        "groupm-mosaic/core-bundle":  "dev-master"
+    }, 
+    "repositories": [ 
+      {
+        "type": "git",
+        "url":  "git@bitbucket-mosaic-bundles.org:groupm-ph/locator-bundle.git"
+      }
+    ], 
+    "autoload": {
+        "psr-4": { "Groupm\\Mosaic\\Bundle\\LocatorBundle\\": "" }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
+    }
+}

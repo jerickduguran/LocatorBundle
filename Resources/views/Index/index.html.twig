@@ -1,0 +1,392 @@
+<style type="text/css">
+    .map-wrapper{height: 500px;}
+    #map{height: 100%;}
+</style>
+<script type="text/javascript">
+            var infowindow_is_open = false;
+	    var addresses_data  = [];
+	    var addresses       = [];
+	    var searches        = [];
+            var map;
+            var markers         = [];               
+            var user_latitude   = null;
+            var user_longitude  = null;
+            
+            var directionsService = null;
+            var directionsDisplay = null;
+            var geocoder          = null;
+            var location_count    = 0;
+            var in_search_action     = false;
+		
+            function initMap() {   
+
+                directionsService = new google.maps.DirectionsService;
+                directionsDisplay = new google.maps.DirectionsRenderer; 
+
+                var myLatLng  = {lat: 14.5528018 , lng: 121.05181470000002};
+                var sourceUrl = "{{ path('mosaic_locator_fetch')}}";
+                    map       = new google.maps.Map(document.getElementById('map'),{ zoom: 16, center: myLatLng});  
+
+                directionsDisplay.setMap(map);   
+                geocoder = new google.maps.Geocoder;
+                
+                $.ajax({
+                        type: "GET",
+                        url: sourceUrl,
+                        dataType: "xml",
+                        success: showAddress
+                });   
+            } 
+
+            function showAddress(xml) {  
+                $(xml).find("location").each(function(){	
+                        var name                = $(this).find('name').text();
+                        var address             = $(this).find('address').text();   
+                        var photo               = $(this).find('photo').text();   
+                        var phone               = $(this).find('phone').text();   
+                        var mobile              = $(this).find('mobile').text();   
+                        var email               = $(this).find('email').text();   
+                        var data                = {position: {lat: Number($(this).find('lat').text()),lng: Number($(this).find('lng').text())},
+                                                   name:            name, 
+                                                   address:         address,
+                                                   phone:         phone,
+                                                   mobile:         mobile,
+                                                   email:         email,
+                                                   photo:           photo};
+
+                        addresses_data.push(data);
+                        addresses.push(name.toLowerCase());  
+                }); 
+                
+                reloadMarkers(); 
+                google.maps.event.addListener(map, 'idle', reloadMarkers);  
+                
+                {% if find_nearest == false%}
+                    map.addListener('bounds_changed', function() { reloadMarkers();}); 
+                {% endif %}
+                showLocationCount();
+                getLocation(); 
+            } 
+
+            // Adds a marker to the map.
+            function addMarker(data) {  
+                var icon = {
+                    url: '{{icon}}',
+                    size: new google.maps.Size(20, 32), 
+                    origin: new google.maps.Point(0, 0), 
+                    anchor: new google.maps.Point(0, 32)
+                  };
+
+                var marker       = new google.maps.Marker({
+                                     position: data.position,
+                                     title: data.name,
+                                     map: map,
+                                     animation: google.maps.Animation.DROP,
+                                     icon: icon});   
+
+               var contactDetails  = '<p><i class="glyphicon glyphicon-phone-alt"></i> '+data.phone+'</p>' + 
+                                     '<p><i class="glyphicon glyphicon-earphone"></i> '+data.mobile+'</p>' + 
+                                     '<p><i class="glyphicon glyphicon-envelope"></i> <a href="mailto:'+data.email+'" target="_blank">'+data.email+'</a></p>';
+                             
+               var location_detail = '<div class="container" style="width:400px;">'+
+                                   '<div class="row"><div class="col-md-12"><h2 class="color-red">'+data.name+'</h2>' + 
+                                   '<div class="clearfix"></div></div></div>'+
+                                   '<div class="row"><div class="col-md-6"><img style="width: 100%;max-height:200px;" class="img-responsive" src="'+data.photo+'"/></div><div class="col-md-6"><p class="first">'+nl2br(data.address)+'</p>'+contactDetails+'</div></div>'+ 
+                                   '<div>&nbsp;</div>'+
+                                   '<div>&nbsp;</div>'+
+                                   '<div class="row"><div class="col-md-12"><p><a class="btn btn-warning" onclick="calculateAndDisplayRoute('+data.position.lat+','+data.position.lng+');">Get Direction</a></p></div></div></div>';
+
+                var infowindow = new google.maps.InfoWindow({
+                      content: location_detail
+                });
+
+                marker.addListener('click', function() { 
+                      infowindow.open(map, marker);
+                      infowindow_is_open = true; 
+                });
+                
+                location_count = location_count + 1;  
+                
+                markers.push(marker);  
+            } 
+            
+            //show route 
+            function calculateAndDisplayRoute(latitude,longitude)
+            {                
+                if(user_latitude == null || user_longitude == null){
+                    alert('we could not detect your current location, please allow when asked.');
+                    return;
+                } 
+                directionsService.route({
+                  origin: new google.maps.LatLng(user_latitude,user_longitude),
+                  destination: new google.maps.LatLng(latitude,longitude),
+                  travelMode: google.maps.TravelMode.DRIVING
+                }, function(response, status) {
+                  if (status === google.maps.DirectionsStatus.OK) {
+                    directionsDisplay.setDirections(response);
+                  } else {
+                    alert('Directions request failed due to ' + status);
+                  }
+                });
+            }
+            //show route 
+            function calculateAndDisplayRoute(latitude,longitude)
+            {                
+                if(user_latitude == null || user_longitude == null){
+                    alert('we could not detect your current location, please allow when asked.');
+                    return;
+                } 
+                
+                directionsService.route({
+                  origin: new google.maps.LatLng(user_latitude,user_longitude),
+                  destination: new google.maps.LatLng(latitude,longitude),
+                  travelMode: google.maps.TravelMode.DRIVING
+                }, function(response, status) {
+                  if (status === google.maps.DirectionsStatus.OK) {
+                    directionsDisplay.setDirections(response);
+                  } else {
+                    alert('Directions request failed due to ' + status);
+                  }
+                });
+            }
+            function getLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(showPosition);
+                } else { 
+                    alert("Geolocation is not supported by this browser."); 
+                }
+            }
+
+            function showPosition(position){   
+
+                var lat =  position.coords.latitude;
+                var lng =  position.coords.longitude;   
+                
+                user_latitude   = lat;
+                user_longitude  = lng; 
+
+                var myLatLng = new google.maps.LatLng(lat,lng);
+                map.setCenter(myLatLng); 
+                var bounds = new google.maps.LatLngBounds();
+                bounds.extend(myLatLng);
+                map.fitBounds(bounds);
+                  
+                var active_markers = [];  
+                
+                //clear visible markers 
+                markers.forEach(function(marker,idx) {
+                  if(!map.getBounds().contains(marker.getPosition())){   
+                     if(location_count > 0)
+                     location_count = location_count - 1;  
+                     marker.setMap(null);
+                     delete markers[idx]; 
+                  }else{
+                      active_markers.push(marker.getPosition().toString());
+                  }
+                });   
+                  
+                var zoomValue = 16;
+                map.setZoom(zoomValue);   
+                
+                {% if find_nearest %}
+                    for (j = 0; j <= zoomValue ; j++){ 
+                      var found_store   = false; 
+                      for (i = 0; i < addresses_data.length; i++){
+                         var address_bound = new google.maps.LatLng(addresses_data[i].position.lat,addresses_data[i].position.lng);
+                         if(map.getBounds().contains(address_bound) && active_markers.indexOf(address_bound.toString()) < 0){ 
+                             addMarker(addresses_data[i]);   
+                             found_store = true;
+                         }    
+                     }
+                     if(found_store){
+                         break;
+                     }
+                     zoomValue = zoomValue - 1;
+                     newZoomValue = newZoomValue - 1;
+                     map.setZoom(newZoomValue);  
+                    }
+                {% else %}
+                       for (i = 0; i < addresses_data.length; i++){
+                           var address_bound = new google.maps.LatLng(addresses_data[i].position.lat,addresses_data[i].position.lng);
+                           if(map.getBounds().contains(address_bound) && active_markers.indexOf(address_bound.toString()) < 0){ 
+                               addMarker(addresses_data[i]);  
+                           }    
+                       }     
+                {% endif %}
+                //showLocationCount();  
+            }  
+            
+            function reloadMarkers()
+            {     
+                if(in_search_action){
+                    console.log("in_search");
+                    in_search_action = false;
+                    showLocationCount();
+                    return;
+                }
+                if(infowindow_is_open) {
+                    infowindow_is_open = false;
+                    return;
+                }  
+                var active_markers = [];  
+                
+                //clear visible markers 
+                markers.forEach(function(marker,idx) {
+                  if(!map.getBounds().contains(marker.getPosition())){  
+                     if(location_count > 0)
+                     location_count = location_count - 1;  
+                     marker.setMap(null);
+                     delete markers[idx]; 
+                  }else{
+                      active_markers.push(marker.getPosition().toString());
+                  }
+                });    
+                for (i = 0; i < addresses_data.length; i++) 
+                {  
+                    var address_bound = new google.maps.LatLng(addresses_data[i].position.lat,addresses_data[i].position.lng);
+                    if(map.getBounds().contains(address_bound) && active_markers.indexOf(address_bound.toString()) < 0){ 
+                        addMarker(addresses_data[i]);  
+                    }
+                }   
+                
+                showLocationCount(); 
+                
+            }
+
+            function nl2br(val){ 
+               return val.replace(/\n/g, "<br />");
+            }   
+            
+            function initAutocomplete() { 
+              var input     = document.getElementById('location-search');
+              var searchBox = new google.maps.places.SearchBox(input); 
+              map.addListener('bounds_changed', function() { searchBox.setBounds(map.getBounds()); }); 
+              var markers = [];  
+              searchBox.addListener('places_changed', function() {    
+                var places = searchBox.getPlaces(); 
+                if (places.length == 0) {
+                  return;
+                }
+
+                // Clear out the old markers.
+                markers.forEach(function(marker) {
+                  marker.setMap(null);
+                });
+                markers = [];
+                //reset
+                location_count = 0; 
+                // For each place, get the icon, name and location.
+                var bounds = new google.maps.LatLngBounds(); 
+                  places.forEach(function(place) {
+                  var icon = {
+                    url: place.icon,
+                    size:   new google.maps.Size(71, 71),
+                    origin: new google.maps.Point(0, 0),
+                    anchor: new google.maps.Point(17, 34),
+                    scaledSize: new google.maps.Size(25, 25)
+                  };
+
+                  // Create a marker for each place.
+                  markers.push(new google.maps.Marker({
+                    map: map,
+                    icon: icon,
+                    title: place.name,
+                    position: place.geometry.location
+                  }));
+
+                  if (place.geometry.viewport) {
+                    // Only geocodes have viewport.
+                    bounds.union(place.geometry.viewport);
+                  } else {
+                    bounds.extend(place.geometry.location);
+                  }
+                });
+                
+                map.fitBounds(bounds); 
+				
+                var zoomValue = 16;
+                var active_markers = [];  
+                map.setZoom(zoomValue);  
+                
+                //clear visible markers 
+               {# markers.forEach(function(marker,idx) {   
+                    if(!map.getBounds().contains(marker.getPosition())){   
+                       marker.setMap(null);
+                       delete markers[idx]; 
+                       if(location_count > 0)
+                       location_count = location_count - 1;  
+                    }else{
+                        active_markers.push(marker.getPosition().toString());
+                    }
+                });   #}
+                {% if find_nearest %}
+                        var foundLocation = false;
+                        var newZoomValue = zoomValue;
+                        for (j = 0; j <= zoomValue ; j++){  
+                            for (i = 0; i < addresses_data.length; i++){
+                               var address_bound = new google.maps.LatLng(addresses_data[i].position.lat,addresses_data[i].position.lng);
+                               if(map.getBounds().contains(address_bound) && active_markers.indexOf(address_bound.toString()) < 0){ 
+                                   addMarker(addresses_data[i]);    
+                                   foundLocation = true;
+                               }    
+                           } 
+                           if(foundLocation){
+                               break;
+                           }
+                           newZoomValue = newZoomValue - 1;
+                           map.setZoom(newZoomValue);  
+                       }  
+                {% else %}
+                     {#  for (i = 0; i < addresses_data.length; i++){
+                           var address_bound = new google.maps.LatLng(addresses_data[i].position.lat,addresses_data[i].position.lng);
+                           if(map.getBounds().contains(address_bound) && active_markers.indexOf(address_bound.toString()) < 0){ 
+                               addMarker(addresses_data[i]);   
+                           }    
+                       } 
+                       console.log("FOUND:  " +location_count);#}
+                {% endif %} 
+                 in_search_action = true;
+              }); 
+            }             
+            
+            function showLocationCount()
+            {   
+                console.log("COUNTED: " + location_count);
+                $("#locationCount").text(location_count);
+            }            
+            
+            function initGoogleAPI() {
+                initMap();
+                initAutocomplete();
+            }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{api_key}}&libraries=places&callback=initGoogleAPI"
+        async defer></script>   
+
+
+<div class="row">
+	<div class="col-lg-12">
+		<div class="box box-primary">
+			<div class="box header">
+				<div class="col-lg-9">   
+					<div class="form-group">
+					  <label for="location-search">Search</label> 
+					  <input class="form-control" autocomplete="off" id="location-search" type="text" placeholder="Enter location ..."/>
+					</div>  
+				</div> 
+				<div class="col-md-3 text-right">   
+					<div class="vcenter" style="line-height:50px;vertical-align: middle;">
+						 Nearby Location: <span class="badge" id="locationCount">0</span>
+					</div>
+				</div>
+			</div>
+			<div class="box-body">
+				<div class="col-md-12">  
+					<div class="map-wrapper">
+						<div id="map"></div> 
+					</div> 
+				</div> 			
+			</div>
+		</div>
+	</div>
+</div>
